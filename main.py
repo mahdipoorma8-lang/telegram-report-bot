@@ -18,9 +18,9 @@ from telegram.ext import (
 )
 
 # ================== تنظیمات ==================
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN = os.getenv("8217406460:AAFhmRdYqMbR5CKT2YsjDl6A-0gdixzTBW4")
 
-admin_env = os.getenv("ADMIN_IDS")
+admin_env = os.getenv("7506306837")
 if not admin_env or admin_env.strip() == "":
     print("⚠️ ADMIN_IDS تنظیم نشده")
     ADMIN_IDS = []
