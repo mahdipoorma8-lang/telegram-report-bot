@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 # ========= تنظیمات =========
 load_dotenv()  # خواندن متغیرهای محیطی
 BOT_TOKEN = os.getenv("BOT_TOKEN") or "8217406460:AAFhmRdYqMbR5CKT2YsjDl6A-0gdixzTBW4"
-ADMIN_IDS = list(map(int, os.getenv("7506306837", "").split(",")))
+ADMIN_IDS = list(map(int, os.getenv("7506306837").split(",")))
 DB_NAME = "reports.db"
 
 # ساعت یادآوری به وقت ایران
