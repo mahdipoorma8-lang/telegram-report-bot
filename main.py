@@ -21,7 +21,15 @@ from dotenv import load_dotenv
 # ========= تنظیمات =========
 load_dotenv()  # خواندن متغیرهای محیطی
 BOT_TOKEN = os.getenv("BOT_TOKEN") or "8217406460:AAFhmRdYqMbR5CKT2YsjDl6A-0gdixzTBW4"
-ADMIN_IDS = list(map(int, os.getenv("7506306837").split(",")))
+
+# خواندن ADMIN_IDS امن
+admin_env = os.getenv("7506306837")
+if not admin_env or admin_env.strip() == "":
+    print("⚠️ Warning: ADMIN_IDS is empty! Set it in Railway Variables.")
+    ADMIN_IDS = []
+else:
+    ADMIN_IDS = list(map(int, admin_env.split(",")))
+
 DB_NAME = "reports.db"
 
 # ساعت یادآوری به وقت ایران
@@ -29,7 +37,7 @@ REMINDER_HOUR = 20
 REMINDER_MINUTE = 0
 # ===========================
 
-
+# ========= دیتابیس =========
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
@@ -45,7 +53,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-
+# ========= دستورات ربات =========
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "سلام 👋\n"
@@ -54,7 +62,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "📌 دستور مدیر:\n"
         "/گزارش_ماهانه"
     )
-
 
 async def save_or_edit_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
@@ -91,7 +98,6 @@ async def save_or_edit_report(update: Update, context: ContextTypes.DEFAULT_TYPE
         conn.close()
         await update.message.reply_text("✅ گزارش امروز ثبت شد")
 
-
 async def gozaresh_mahane(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.from_user.id not in ADMIN_IDS:
         await update.message.reply_text("⛔ شما دسترسی ندارید")
@@ -123,8 +129,7 @@ async def gozaresh_mahane(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for i in range(0, len(message), 4000):
         await update.message.reply_text(message[i:i + 4000])
 
-
-# ========= یادآوری روزانه (ساعت ۱۷ ایران) =========
+# ========= یادآوری روزانه =========
 async def daily_reminder(context: ContextTypes.DEFAULT_TYPE):
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
@@ -142,7 +147,7 @@ async def daily_reminder(context: ContextTypes.DEFAULT_TYPE):
         except:
             pass
 
-
+# ========= اجرای ربات =========
 async def main():
     init_db()
 
@@ -165,7 +170,6 @@ async def main():
 
     print("Bot is running...")
     await app.run_polling()
-
 
 if __name__ == "__main__":
     import asyncio
