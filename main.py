@@ -1,13 +1,9 @@
-# main.py
-# Telegram Daily Report Bot
-# Persian messages + Jalali date + Daily reminder (Asia/Tehran)
-# python-telegram-bot v20+
-
 import os
 import sqlite3
 import jdatetime
 from datetime import time
 from zoneinfo import ZoneInfo
+
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -17,28 +13,27 @@ from telegram.ext import (
     filters,
 )
 
-# ================== تنظیمات ==================
+# ================= تنظیمات =================
 BOT_TOKEN = os.getenv("8217406460:AAFhmRdYqMbR5CKT2YsjDl6A-0gdixzTBW4")
 
 admin_env = os.getenv("7506306837")
-if not admin_env or admin_env.strip() == "":
-    print("⚠️ ADMIN_IDS تنظیم نشده")
-    ADMIN_IDS = []
-else:
+if admin_env:
     ADMIN_IDS = [int(x) for x in admin_env.split(",")]
+else:
+    ADMIN_IDS = []
 
 DB_NAME = "reports.db"
 
 REMINDER_HOUR = 17
 REMINDER_MINUTE = 0
-# =============================================
+# ==========================================
 
 
-# ================== دیتابیس ==================
+# ================= دیتابیس =================
 def init_db():
     conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-    c.execute("""
+    cursor = conn.cursor()
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS reports (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
@@ -51,7 +46,7 @@ def init_db():
     conn.close()
 
 
-# ================== دستورات ==================
+# ================= دستورات =================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "سلام 👋\n\n"
@@ -68,27 +63,27 @@ async def save_or_edit_report(update: Update, context: ContextTypes.DEFAULT_TYPE
     today = jdatetime.date.today().strftime("%Y/%m/%d")
 
     conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
+    cursor = conn.cursor()
 
-    c.execute(
+    cursor.execute(
         "SELECT id FROM reports WHERE user_id=? AND report_date=?",
-        (user.id, today),
+        (user.id, today)
     )
-    row = c.fetchone()
+    row = cursor.fetchone()
 
     if row:
-        c.execute(
+        cursor.execute(
             "UPDATE reports SET report_text=? WHERE id=?",
-            (text, row[0]),
+            (text, row[0])
         )
         conn.commit()
         conn.close()
         await update.message.reply_text("✏️ گزارش امروز ویرایش شد")
     else:
-        c.execute(
+        cursor.execute(
             "INSERT INTO reports (user_id, full_name, report_date, report_text) "
             "VALUES (?, ?, ?, ?)",
-            (user.id, user.full_name, today, text),
+            (user.id, user.full_name, today, text)
         )
         conn.commit()
         conn.close()
@@ -97,20 +92,20 @@ async def save_or_edit_report(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 async def monthly_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.from_user.id not in ADMIN_IDS:
-        await update.message.reply_text("⛔ شما دسترسی ندارید")
+        await update.message.reply_text("⛔ دسترسی ندارید")
         return
 
     now = jdatetime.date.today()
     month_prefix = f"{now.year}/{str(now.month).zfill(2)}"
 
     conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-    c.execute(
+    cursor = conn.cursor()
+    cursor.execute(
         "SELECT full_name, report_date, report_text "
         "FROM reports WHERE report_date LIKE ? ORDER BY report_date",
-        (f"{month_prefix}%",),
+        (f"{month_prefix}%",)
     )
-    rows = c.fetchall()
+    rows = cursor.fetchall()
     conn.close()
 
     if not rows:
@@ -126,12 +121,12 @@ async def monthly_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(message[i:i + 4000])
 
 
-# ================== یادآوری ==================
+# ================= یادآوری =================
 async def daily_reminder(context: ContextTypes.DEFAULT_TYPE):
     conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-    c.execute("SELECT DISTINCT user_id FROM reports")
-    users = c.fetchall()
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT user_id FROM reports")
+    users = cursor.fetchall()
     conn.close()
 
     for (user_id,) in users:
@@ -141,11 +136,11 @@ async def daily_reminder(context: ContextTypes.DEFAULT_TYPE):
                 text="⏰ یادآوری روزانه\n"
                      "لطفاً گزارش امروزت رو ارسال کن 📝"
             )
-        except:
+        except Exception:
             pass
 
 
-# ================== اجرا ==================
+# ================= اجرا =================
 async def main():
     init_db()
 
@@ -162,4 +157,14 @@ async def main():
         time=time(
             hour=REMINDER_HOUR,
             minute=REMINDER_MINUTE,
-            tzinfo=ZoneInfo("Asia/Tehran"),
+            tzinfo=ZoneInfo("Asia/Tehran")
+        )
+    )
+
+    print("Bot is running...")
+    await app.run_polling()
+
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
